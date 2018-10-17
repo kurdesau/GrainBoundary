@@ -1,0 +1,1429 @@
+#!/usr/bin/env python
+
+__name__= "Grain Boundary Tester"
+__author__ = "Fiodar Kurdzesau, and Roksolana Kozak"
+__copyright__ = "Copyright 2017, The Grain Boundary Project"
+__credits__ = ["Fiodar Kurdzesau", "Roksolana Kozak"]
+__license__ = "GPL"
+__version__ = "1.3"
+__maintainer__ = "Roksolana Kozak"
+__email__ = "kurdesau@gmail.com"
+__status__ = "Tested on 06.07.2017"
+__content__ = "1429 lines"
+
+import matplotlib as pl
+pl.rcParams.update({'figure.max_open_warning': 0})
+import sys
+import inspect
+import matplotlib.pyplot as plt
+import time
+import os
+import numpy as np
+import math
+import scipy
+from numpy import matrix as matr
+import matplotlib.pyplot as plt
+import matplotlib
+import platform
+from PIL import Image
+from mpl_toolkits.mplot3d import proj3d
+import scipy.optimize as opt
+from scipy.stats import norm as norm1
+import matplotlib.mlab as mlab
+from matplotlib import cm
+
+
+'''Functions for direct space reconstruction
+    Start'''
+def CubicFCC_Dia (a=1, Dia=True):
+    SimpCub=np.array(((0.0,0.0,0.0),(1.0,0.0,0.0),(0.0,1.0,0.0),(1.0,1.0,0.0),(0.0,0.0,1.0),(1.0,0.0,1.0),(0.0,1.0,1.0),(1.0,1.0,1.0)))
+    AddFCC=np.array(((0.5,0.5,0.0),(0.5,0.5,1.0),(0.5,0.0,0.5),(0.0,0.5,0.5),(1.0,0.5,0.5),(0.5,1.0,0.5)))
+    AddDia=np.array(((0.25,0.25,0.25),(0.75,0.75,0.25),(0.75,0.25,0.75),(0.25,0.75,0.75)))
+    Matr=np.concatenate((SimpCub,AddFCC))
+    if Dia:
+        return a*np.concatenate((Matr,AddDia))
+    else:
+        return a*Matr,a*AddDia
+
+def CubicFCC_GaAs (a=1, Dia=True):
+    SimpCub=np.array(((0.0,0.0,0.0,0.0),(1.0,0.0,0.0,0.0),(0.0,1.0,0.0,0.0),(1.0,1.0,0.0,0.0),(0.0,0.0,1.0,0.0),(1.0,0.0,1.0,0.0),(0.0,1.0,1.0,0.0),(1.0,1.0,1.0,0.0)))
+    AddFCC=np.array(((0.5,0.5,0.0,0.0),(0.5,0.5,1.0,0.0),(0.5,0.0,0.5,0.0),(0.0,0.5,0.5,0.0),(1.0,0.5,0.5,0.0),(0.5,1.0,0.5,0.0)))
+    AddDia=np.array(((0.25,0.25,0.25,1.0),(0.75,0.75,0.25,1.0),(0.75,0.25,0.75,1.0),(0.25,0.75,0.75,1.0)))
+    Matr=np.concatenate((SimpCub,AddFCC))
+    return a*np.concatenate((Matr,AddDia))
+
+def TranslArrayX (n):
+    Zero=np.zeros((n),np.float64)
+    One=np.ones((n),np.float64)
+    return np.transpose(np.array((One,Zero,Zero)))
+
+def TranslArrayY (n):
+    Zero=np.zeros((n),np.float64)
+    One=np.ones((n),np.float64)
+    return np.transpose(np.array((Zero,One,Zero)))
+
+def TranslArrayZ (n):
+    Zero=np.zeros((n),np.float64)
+    One=np.ones((n),np.float64)
+    return np.transpose(np.array((Zero,Zero,One)))
+
+def CubicFCC_DiaX (a=1, Dia=True):
+    SimpCub=np.array(((1.0,0.0,0.0),(1.0,1.0,0.0),(1.0,0.0,1.0),(1.0,1.0,1.0)))
+    AddFCC=np.array(((0.5,0.5,0.0),(0.5,0.5,1.0),(0.5,0.0,0.5),(1.0,0.5,0.5),(0.5,1.0,0.5)))
+    AddDia=np.array(((0.25,0.25,0.25),(0.75,0.75,0.25),(0.75,0.25,0.75),(0.25,0.75,0.75)))
+    Matr=np.concatenate((SimpCub,AddFCC))
+    if Dia:
+        return a*np.concatenate((Matr,AddDia))
+    else:
+        return a*Matr,a*AddDia
+
+def CubicFCC_DiaY (a=1, Dia=True):
+    SimpCub=np.array(((0.0,1.0,0.0),(1.0,1.0,0.0),(0.0,1.0,1.0),(1.0,1.0,1.0)))
+    AddFCC=np.array(((0.5,0.5,0.0),(0.5,0.5,1.0),(0.0,0.5,0.5),(1.0,0.5,0.5),(0.5,1.0,0.5)))
+    AddDia=np.array(((0.25,0.25,0.25),(0.75,0.75,0.25),(0.75,0.25,0.75),(0.25,0.75,0.75)))
+    Matr=np.concatenate((SimpCub,AddFCC))
+    if Dia:
+        return a*np.concatenate((Matr,AddDia))
+    else:
+        return a*Matr,a*AddDia
+
+def CubicFCC_DiaYdop (a=1, Dia=True):
+    SimpCub=np.array(((1.0,1.0,0.0),(1.0,1.0,1.0)))
+    AddFCC=np.array(((0.5,0.5,0.0),(0.5,0.5,1.0),(1.0,0.5,0.5),(0.5,1.0,0.5)))
+    AddDia=np.array(((0.25,0.25,0.25),(0.75,0.75,0.25),(0.75,0.25,0.75),(0.25,0.75,0.75)))
+    Matr=np.concatenate((SimpCub,AddFCC))
+    if Dia:
+        return a*np.concatenate((Matr,AddDia))
+    else:
+        return a*Matr,a*AddDia
+
+def CubicFCC_DiaZ (a=1, Dia=True):
+    SimpCub=np.array(((0.0,0.0,1.0),(1.0,0.0,1.0),(0.0,1.0,1.0),(1.0,1.0,1.0)))
+    AddFCC=np.array(((0.5,0.5,1.0),(0.5,0.0,0.5),(0.0,0.5,0.5),(1.0,0.5,0.5),(0.5,1.0,0.5)))
+    AddDia=np.array(((0.25,0.25,0.25),(0.75,0.75,0.25),(0.75,0.25,0.75),(0.25,0.75,0.75)))
+    Matr=np.concatenate((SimpCub,AddFCC))
+    if Dia:
+        return a*np.concatenate((Matr,AddDia))
+    else:
+        return a*Matr,a*AddDia
+
+def CubicFCC_DiaZdop (a=1, Dia=True):
+    SimpCub=np.array(((1.0,0.0,1.0),(1.0,1.0,1.0)))
+    AddFCC=np.array(((0.5,0.5,1.0),(0.5,0.0,0.5),(1.0,0.5,0.5),(0.5,1.0,0.5)))
+    AddDia=np.array(((0.25,0.25,0.25),(0.75,0.75,0.25),(0.75,0.25,0.75),(0.25,0.75,0.75)))
+    Matr=np.concatenate((SimpCub,AddFCC))
+    if Dia:
+        return a*np.concatenate((Matr,AddDia))
+    else:
+        return a*Matr,a*AddDia
+
+def CubicFCC_DiaZdop0 (a=1, Dia=True):
+    SimpCub=np.array(((0.0,1.0,1.0),(1.0,1.0,1.0)))
+    AddFCC=np.array(((0.5,0.5,1.0),(0.5,0.0,0.5),(0.0,0.5,0.5),(1.0,0.5,0.5),(0.5,1.0,0.5)))
+    AddDia=np.array(((0.25,0.25,0.25),(0.75,0.75,0.25),(0.75,0.25,0.75),(0.25,0.75,0.75)))
+    Matr=np.concatenate((SimpCub,AddFCC))
+    if Dia:
+        return a*np.concatenate((Matr,AddDia))
+    else:
+        return a*Matr,a*AddDia
+
+def CubicFCC_DiaZdopDop (a=1, Dia=True):
+    AddFCC=np.array(((0.5,0.5,1.0),(1.0,0.5,0.5),(0.5,1.0,0.5),(1.0,1.0,1.0)))
+    AddDia=np.array(((0.25,0.25,0.25),(0.75,0.75,0.25),(0.75,0.25,0.75),(0.25,0.75,0.75)))
+    if Dia:
+        return a*np.concatenate((AddFCC,AddDia))
+    else:
+        return a*AddFCC,a*AddDia
+
+def Line_XZ (a=1, Dia=False, Number=10):
+    if Dia:
+        Cell_0=CubicFCC_DiaZ(a,Dia)
+        Cell_X=CubicFCC_DiaZdop(a,Dia)
+        Cell_dX=TranslArrayX(len(Cell_X))
+        for i in range (1,Number):
+            Cell_0=np.concatenate((Cell_0,Cell_X+a*i*Cell_dX))
+        return Cell_0
+    else:
+        Cell_0,Cell_0ad=CubicFCC_DiaZ(a,Dia)
+        Cell_X,Cell_Xad=CubicFCC_DiaZdop(a,Dia)
+        Cell_dX=TranslArrayX(len(Cell_X))
+        Cell_dXad=TranslArrayX(len(Cell_Xad))
+        for i in range (1,Number):
+            Cell_0=np.concatenate((Cell_0,Cell_X+a*i*Cell_dX))
+            Cell_0ad=np.concatenate((Cell_0ad,Cell_Xad+a*i*Cell_dXad))
+        return Cell_0,Cell_0ad
+
+def Line_YZ (a=1, Dia=False, Number=10):
+    if Dia:
+        Cell_0=CubicFCC_DiaZdop0(a,Dia)
+        Cell_X=CubicFCC_DiaZdopDop(a,Dia)
+        Cell_dX=TranslArrayX(len(Cell_X))
+        for i in range (1,Number):
+            Cell_0=np.concatenate((Cell_0,Cell_X+a*i*Cell_dX))
+        return Cell_0
+    else:
+        Cell_0,Cell_0ad=CubicFCC_DiaZdop0(a,Dia)
+        Cell_X,Cell_Xad=CubicFCC_DiaZdopDop(a,Dia)
+        Cell_dX=TranslArrayX(len(Cell_X))
+        Cell_dXad=TranslArrayX(len(Cell_Xad))
+        for i in range (1,Number):
+            Cell_0=np.concatenate((Cell_0,Cell_X+a*i*Cell_dX))
+            Cell_0ad=np.concatenate((Cell_0ad,Cell_Xad+a*i*Cell_dXad))
+        return Cell_0,Cell_0ad
+
+def Plane_XYZ (a, Dia=False, NX=10, NY=10):
+    if Dia:
+        X=Line_XZ (a, Dia, NX)
+        Y=Line_YZ (a, Dia, NX)
+        dY=TranslArrayY(len(Y))
+        for i in range (1,NY):
+            X=np.concatenate((X,Y+a*i*dY))
+        return X
+    else:
+        X,Xad=Line_XZ (a, Dia, NX)
+        Y,Yad=Line_YZ (a, Dia, NX)
+        dY=TranslArrayY(len(Y))
+        dYad=TranslArrayY(len(Yad))
+        for i in range (1,NY):
+            X=np.concatenate((X,Y+a*i*dY))
+            Xad=np.concatenate((Xad,Yad+a*i*dYad))
+        return X,Xad
+
+def Line_X (a=1, Dia=False, Number=10):
+    if Dia:
+        Cell_0=CubicFCC_Dia(a,Dia)
+        Cell_X=CubicFCC_DiaX(a,Dia)
+        Cell_dX=TranslArrayX(len(Cell_X))
+        for i in range (1,Number):
+            Cell_0=np.concatenate((Cell_0,Cell_X+a*i*Cell_dX))
+        return Cell_0
+    else:
+        Cell_0,Cell_0ad=CubicFCC_Dia(a,Dia)
+        Cell_X,Cell_Xad=CubicFCC_DiaX(a,Dia)
+        Cell_dX=TranslArrayX(len(Cell_X))
+        Cell_dXad=TranslArrayX(len(Cell_Xad))
+        for i in range (1,Number):
+            Cell_0=np.concatenate((Cell_0,Cell_X+a*i*Cell_dX))
+            Cell_0ad=np.concatenate((Cell_0ad,Cell_Xad+a*i*Cell_dXad))
+        return Cell_0,Cell_0ad
+
+def Line_Y (a=1, Dia=False, Number=10):
+    if Dia:
+        Cell_0=CubicFCC_DiaY(a,Dia)
+        Cell_X=CubicFCC_DiaYdop(a,Dia)
+        Cell_dX=TranslArrayX(len(Cell_X))
+        for i in range (1,Number):
+            Cell_0=np.concatenate((Cell_0,Cell_X+a*i*Cell_dX))
+        return Cell_0
+    else:
+        Cell_0,Cell_0ad=CubicFCC_DiaY(a,Dia)
+        Cell_X,Cell_Xad=CubicFCC_DiaYdop(a,Dia)
+        Cell_dX=TranslArrayX(len(Cell_X))
+        Cell_dXad=TranslArrayX(len(Cell_Xad))
+        for i in range (1,Number):
+            Cell_0=np.concatenate((Cell_0,Cell_X+a*i*Cell_dX))
+            Cell_0ad=np.concatenate((Cell_0ad,Cell_Xad+a*i*Cell_dXad))
+        return Cell_0,Cell_0ad
+
+def Plane_XY (a, Dia=False, NX=10, NY=10):
+    if Dia:
+        X=Line_X (a, Dia, NX)
+        Y=Line_Y (a, Dia, NX)
+        dY=TranslArrayY(len(Y))
+        for i in range (1,NY):
+            X=np.concatenate((X,Y+a*i*dY))
+        return X
+    else:
+        X,Xad=Line_X (a, Dia, NX)
+        Y,Yad=Line_Y (a, Dia, NX)
+        dY=TranslArrayY(len(Y))
+        dYad=TranslArrayY(len(Yad))
+        for i in range (1,NY):
+            X=np.concatenate((X,Y+a*i*dY))
+            Xad=np.concatenate((Xad,Yad+a*i*dYad))
+        return X,Xad
+
+def Space_3D (a, Dia, NX,NY,NZ):
+    if Dia:
+        plane0=Plane_XY(a,Dia,NX,NY)
+        planeN=Plane_XYZ(a,Dia,NX,NY)
+        dZ=TranslArrayZ(len(planeN))
+        for i in range (1,NZ):
+            plane0=np.concatenate((plane0,planeN+a*i*dZ))
+        return plane0
+    else:
+        X,Xad=Plane_XY(a,Dia,NX,NY)
+        Y,Yad=Plane_XYZ(a,Dia,NX,NY)
+        dY=TranslArrayZ(len(Y))
+        dYad=TranslArrayZ(len(Yad))
+        for i in range (1,NZ):
+            X=np.concatenate((X,Y+a*i*dY))
+            Xad=np.concatenate((Xad,Yad+a*i*dYad))
+        return X,Xad
+'''Functions for direct space reconstruction. Working with FCC structures (diamond or zinc blend)
+    The final working function is Space_3D
+    Arguments: a- lattice constant in A; dia- lattice type selection when dia=TRUE - diamond, else - zinc blende; Nx, Ny, Nz- number of cells
+    End'''
+
+
+'''Ref.: https://stackoverflow.com/questions/17915475/how-may-i-project-vectors-onto-a-plane-defined-by-its-orthogonal-vector-in-pytho
+    Functions in order to project point x onto the plane given by normal vector n. Start'''
+def dot_product(x, y):
+    return sum([x[i] * y[i] for i in range(len(x))])
+
+def norm(x):
+    return math.sqrt(dot_product(x, x))
+
+def normalize(x):
+    return [x[i] / norm(x) for i in range(len(x))]
+
+def project_onto_plane(x, n):
+    d = dot_product(x, n) / norm(n)
+    p = [d * normalize(n)[i] for i in range(len(n))]
+    return [x[i] - p[i] for i in range(len(x))]
+'''The final working function project_onto_plane
+    Arguments: x-coordinates of point; n- coordinates of planenormal vector
+    End'''
+
+
+'''ref. https://github.com/matplotlib/matplotlib/issues/537'''
+def orthogonal_proj(zfront, zback):
+    ################Service function to build orthogonal projection###############################
+    ################Used for orthogonal printing of 3D structures#################################
+	a = (zfront+zback)/(zfront-zback)
+	b = -2*(zfront*zback)/(zfront-zback)
+	return np.array([[1,0,0,0],
+                     [0,1,0,0],
+                     [0,0,a,b],
+                     [0,0,0,zback]])
+
+
+def Plane_by3points ((x1,y1,z1),(x2,y2,z2),(x3,y3,z3)):
+    #####Service function to create plane from coordinates of its three points#####################
+    vector1 = [x2 - x1, y2 - y1, z2 - z1]
+    vector2 = [x3 - x1, y3 - y1, z3 - z1]
+    cross_product = [vector1[1] * vector2[2] - vector1[2] * vector2[1], -1 * (vector1[0] * vector2[2] - vector1[2] * vector2[0]), vector1[0] * vector2[1] - vector1[1] * vector2[0]]
+    a = cross_product[0]
+    b = cross_product[1]
+    c = cross_product[2]
+    d = - (cross_product[0] * x1 + cross_product[1] * y1 + cross_product[2] * z1)
+    return (-a,-b,-c,d)
+
+
+def Plane_byNormal (point, normal):
+    ###Service function to create plane from coordinates of its one points and normal vector#######
+    d = -point.dot(normal)
+    return (-normal[0],-normal[1],-normal[2],d)
+
+
+def SortPoints (points,PlCoord):
+    ###Function to separate the points of 3D structures according to plane coordinates- PlCoord####
+    ###Result is given as three numpy arrays: 1-st in plane; 2-nd above plane; 3-rd below plane####
+    inPlane=[]
+    abovePlane=[]
+    belowPlane=[]
+    for i in range (0, len(points)):
+        if points[i][0]*PlCoord[0]+points[i][1]*PlCoord[1]+points[i][2]*PlCoord[2]==PlCoord[3]:
+            inPlane.append(points[i])
+        elif points[i][0]*PlCoord[0]+points[i][1]*PlCoord[1]+points[i][2]*PlCoord[2]>PlCoord[3]:
+            abovePlane.append(points[i])
+        else:
+            belowPlane.append(points[i])
+    return np.array(inPlane),np.array(abovePlane),np.array(belowPlane)
+
+
+def MakeProjection (points,n):
+    ##############Function to project the list of points onto plane with normal vector n##########
+    ################################based on project_onto_plane functions##########################
+    inPlane=[]
+    for i in range (0, len(points)):
+        res=project_onto_plane(points[i], n)
+        inPlane.append(res)
+    return np.array(inPlane)
+
+
+def ReadUniversalText(name, Num):
+   ################Universal function to read .txt file without data conversion####################
+   arr=[] 
+   nn0=0
+   try:
+      f = open(name, 'r')
+      for line in f:
+         if nn0<Num:
+            nn0+=1   
+         else:
+            add=[]
+            t = line.split()
+            for i in range(0, len(t)):
+               add.append(t[i])
+            arr.append(add)
+   except IOError:
+      print "Could not open file:", name
+   return arr
+
+
+def HistVisual(ang, bins=100, AxName=("Variation, %","Quantity, %"), show=True, save=False, savePath='/tmp', indicator=False):
+   ##################Representing function in order to visualise distributions of data from ang##############
+   #Arguments: bins- number of bins; AxName- Axis names [1]-variable, [2]-quantity; show=True- show histogramm
+   try:
+      NN=len(ang)
+   except:
+      NN=0
+      res=None   
+   if NN!=0:
+      hist, bins = np.histogram(ang, bins)
+      MaxProb=np.argmax(hist)
+      AdrMax=bins[MaxProb]
+      res=(bins[MaxProb] + bins[MaxProb+1])/2
+      if show or save:
+         plt.ion()
+         fig=plt.figure()
+         width = 0.7 * (bins[1] - bins[0])
+         center = (bins[:-1] + bins[1:])/2
+         plt.bar(center, 100.0*hist/NN, align='center', width=width)
+         plt.xlabel(AxName[0])
+         plt.ylabel(AxName[1])
+         if show:
+            StopAnsw()
+         if save:
+            saveName=savePath+AxName[0]+'.png'
+            plt.savefig(saveName)
+            if not show and not indicator:
+                plt.close(fig)
+   return fig
+
+
+def StopAnsw(aa='Press any key to continue'):
+    ####################################function in order to ask variable aa from the screen##################
+   res=raw_input(aa)
+   return res
+
+
+''' generic math functions from Stef Smeets, ETH Zurich
+Start'''
+def add_v3v3(a, b):
+    return [a[0] + b[0],
+            a[1] + b[1],
+            a[2] + b[2]]
+
+def sub_v3v3(a, b):
+    return [a[0] - b[0],
+            a[1] - b[1],
+            a[2] - b[2]]
+
+def dot_v3v3(a, b):
+    return (a[0] * b[0] +
+            a[1] * b[1] +
+            a[2] * b[2])
+
+def mul_v3_fl(a, f):
+    a[0] *= f
+    a[1] *= f
+    a[2] *= f
+
+def length(v):
+	"""Calculate length of a vector"""
+	return np.linalg.norm(v)
+'''End'''
+
+
+def isect_Detector (p1, p_no, p_co=0, p0=np.array((0,0,0)), epsilon=0.000001, addCen=True):
+    ####Function to define diffraction pattern onto detector plane modified from Stef Smeets, ETH Zurich######
+    #p0, p1: define the line
+    #p_co, p_no: define the plane:
+    #p_co is a point on the plane (plane coordinate).
+    #p_no is a normal vector defining the plane direction; does not need to be normalized.
+    #epsilon- intersection limit
+    #addCen=True- adding zero point corresponding to (0,0) into data set
+    p1=np.array(p1)
+    p_no=np.array(p_no)
+    if addCen:
+      p_co=p_no
+    u=sub_v3v3(p1, p0)
+    w = sub_v3v3(p0, p_co)
+    dot = dot_v3v3(p_no, u)
+
+    if abs(dot) > epsilon:
+        fac = -dot_v3v3(p_no, w) / dot
+        mul_v3_fl(u, fac)
+        return add_v3v3(p0, u)
+    else:
+        return None             # The segment is parallel to plane
+
+
+def angle(v1,v2):
+	"""Calculates the angle between 2 vectors around the origin
+	http://stackoverflow.com/questions/10133957/signed-angle-between-two-vectors-without-a-reference-plane/10145056#10145056"""
+  	s = length(np.cross(v1,v2))
+  	c = np.dot(v1,v2)
+  	ang = np.arctan2(s, c)
+  	return ang
+
+
+def Angle ((a,b,c),(a1,b1,c1), DEG=True, COS=False):
+   #####Special function for calculation the angle between 2 vectors defined by 3 component arrays############
+   if COS:
+      VP=(math.cos(math.radians(a))*math.cos(math.radians(a1))+math.cos(math.radians(b))*math.cos(math.radians(b1))+math.cos(math.radians(c))*math.cos(math.radians(c1)))
+      RV=math.sqrt(math.cos(math.radians(a))*math.cos(math.radians(a))+math.cos(math.radians(b))*math.cos(math.radians(b))+math.cos(math.radians(c))*math.cos(math.radians(c)))*math.sqrt(math.cos(math.radians(a1))*math.cos(math.radians(a1))+math.cos(math.radians(b1))*math.cos(math.radians(b1))+math.cos(math.radians(c1))*math.cos(math.radians(c1)))
+   else:
+      VP=a*a1+b*b1+c*c1
+      RV=math.sqrt((a*a+b*b+c*c)*(a1*a1+b1*b1+c1*c1))
+   try:
+      if DEG:
+         return math.degrees(math.acos(VP/RV))
+      else:     
+         return math.acos(VP/RV)
+   except:
+      return -333 
+
+
+def rotation_matrix_1 (axis,theta, Deg=True):
+   #function, which calculates the rotation matrix around axis of angle theta (by definition it is given in degrees)#
+   if Deg:
+      theta=np.radians(theta)
+   axis = axis/np.sqrt(np.dot(axis,axis))
+   a = np.cos(theta/2)
+   b,c,d = -axis*np.sin(theta/2)
+   return np.array([ [a*a+b*b-c*c-d*d,          2*(b*c-a*d),         2*(b*d+a*c) ],
+					  [    2*(b*c+a*d),      a*a+c*c-b*b-d*d,         2*(c*d-a*b) ],
+					  [    2*(b*d-a*c),          2*(c*d+a*b),     a*a+d*d-b*b-c*c ] ])
+
+
+def PeakFinderNP (imgTT=[], area=3, lim=1, wid=0, hei=0):
+    ##############simplified function for initial peak finding from 2D local maxima##########################
+    lim=lim+np.mean(imgTT)
+    peaks=[]
+    coord=(0,0,0)
+    maximum=0
+    if wid==0:
+        wid=len(imgTT)
+    if hei==0:
+        hei=len(imgTT[0])
+    for i in range (area, wid-area-1):
+        for j in range (area, hei-area-1):
+            pix=imgTT[i][j]
+            if pix>lim:
+                maximum=pix
+                for k in range(-area, area+1):
+                    for l in range (-area, area+1):
+                        if ((i+k)>=0) and ((i+k)<=wid) and ((j+l)>=0) and ((j+l)<=hei):
+                            if imgTT[i+k][j+l]>pix:
+                                maximum=0
+                                break
+                    if maximum==0:
+                        break
+                if maximum>lim:
+                    coord=(i,j, pix)
+                    peaks.append(coord)
+    peaks=np.array(peaks)
+    res=[]
+    for i in range (0, len(peaks)-1):
+        if peaks[i][2]>0:
+            res.append(peaks[i])
+            for j in range (i+1, len(peaks)):
+                dist=math.sqrt((peaks[i][0]-peaks[j][0])**2+(peaks[i][1]-peaks[j][1])**2)
+                if dist<area:
+                    peaks[j][2]=0
+    if peaks[len(peaks)-1][2]!=0:
+        res.append(peaks[len(peaks)-1])
+    return res
+
+
+def PlotFig (nameFile='/Users/kfidor/Documents/documents/Roksolana/TEMscripts/ReconstrLattice/JEOL ADF1 24.tif', peaks=[],ii=0,jj=1,Title=' ', param=(1.0, 20, 240, 20), show=True, save=True, savePath='/tmp/'):
+    ###Graphical function for plotting .tif image located at nameFile; with overlapping by points from peaks[ii], peaks[jj]; name from Title and parameters from param#####
+    aspect=param[0]             #ratio between x and y scale
+    vmin=param[1]               #Minimum Int limit
+    vmax=param[2]               #Maximum Int limit
+    dv=param[3]                 #Scale unit for Intensity
+    plt.ion()
+    fig=plt.figure()
+    xsize,ysize = fig.get_size_inches()
+    minsize = min(xsize,ysize)
+    xlim = .4*minsize/xsize
+    ylim = .4*minsize/ysize
+    if aspect < 1:
+        xlim=xlim*aspect
+    else:
+        ylim = ylim/aspect
+    fig.subplots_adjust(left=.5-xlim,right=.5+xlim,bottom=.5-ylim,top=.5+ylim)
+    ax = fig.add_subplot(111)
+    im=Image.open(nameFile)
+    imgAr1=np.array(im)
+    img=np.transpose(np.transpose(imgAr1)[0])
+    cmap=plt.cm.gist_yarg
+    levels=np.linspace(vmin,vmax, dv+1)
+    norm = matplotlib.colors.BoundaryNorm(levels, 256)
+    Pl_2D=plt.contourf(img, levels, cmap=cmap, norm=norm)
+    cb = plt.colorbar()
+    if Title!= ' ':
+        plt.title(Title)
+    plt.xlabel('x, pixels')
+    plt.ylabel('y, pixels')
+    axt=plt.gca()
+    axt.set_ylim(ax.get_ylim()[::-1])
+    axt.xaxis.set_ticks_position('top')
+    axt.xaxis.set_label_position('top')
+    ax.autoscale(False)
+    if len(peaks)>0:
+        peaks=np.transpose(peaks)
+        xx=peaks[0]
+        yy=peaks[1]
+        Scat=ax.scatter(peaks[ii],peaks[jj], s=5, c='r',marker='x', zorder=1)
+    if show:
+        raw_input('Press any key>')
+    if save:
+        if Title== ' ':
+            saveName=savePath+'FigurePeaks.png'
+        else:
+            saveName=savePath+Title+'.png'
+        plt.savefig(saveName)
+        if not show:
+            plt.close(fig)
+
+
+
+def PlotScat (peaks=[],ii=0,jj=1,Title=' ', Lego=[], mainInd=-10, legend=[], show=True, save=False, savePath='/tmp/'):
+    ###Graphical function for plotting scatters from peaks[ii], peaks[jj] with name from Title; main index- mainInd; peaks data from lego and legend#####
+    col=('r','g','b','c','m', 'k','y', 'r','g','b','c','m', 'k','y','r','g','b','c','m', 'k','y','r','g','b','c','m', 'k','y', 'r','g','b','c','m', 'k','y','r','g','b','c','m', 'k','y')
+    plt.ion()
+    fig=plt.figure()
+    ax = fig.add_subplot(111)
+    for i in range (0,len(peaks)):
+        if len(peaks[i])>0:
+            peaks1=np.transpose(peaks[i])
+            if len(Lego)>0:
+                if i==mainInd:
+                    Scat=ax.scatter(peaks1[ii],peaks1[jj], s=20, c=col[i],marker='o', zorder=1, label=Lego[i])
+                    for j, txt in enumerate(legend):
+                        ax.annotate(txt, (peaks1[ii][j],peaks1[jj][j]))
+                else:
+                    Scat=ax.scatter(peaks1[ii],peaks1[jj], s=5, c=col[i],marker='x', zorder=1, label=Lego[i])
+                    ax.legend()
+            else:
+                if i==mainInd:
+                    Scat=ax.scatter(peaks1[ii],peaks1[jj], s=20, c=col[i],marker='o', zorder=1)
+                    for j, txt in enumerate(legend):
+                        ax.annotate(txt, (peaks1[ii][j],peaks1[jj][j]))
+                else:
+                    Scat=ax.scatter(peaks1[ii],peaks1[jj], s=5, c=col[i],marker='x', zorder=1)
+    if Title!= ' ':
+        plt.title(Title)
+    plt.xlabel('x, pixels')
+    plt.ylabel('y, pixels')
+    axt=plt.gca()
+    axt.set_xlim(ax.get_xlim()[::-1])
+    axt.xaxis.set_ticks_position('bottom')
+    axt.xaxis.set_label_position('bottom')
+    ax.autoscale(False)
+    if show:
+        raw_input('Press any key>')
+    if save:
+        saveName=savePath+Title+'.png'
+        plt.savefig(saveName)
+        if not show:
+            plt.close(fig)
+
+def FindLongest(peaks, ii=0, jj=1):
+    MaxDist=0
+    for i in range (0, len(peaks)-1):
+        for j in range (0, len(peaks)):
+            if MaxDist<np.sqrt((peaks[i][ii]-peaks[j][ii])**2+(peaks[i][jj]-peaks[j][jj])**2):
+                MaxDist=np.sqrt((peaks[i][ii]-peaks[j][ii])**2+(peaks[i][jj]-peaks[j][jj])**2)
+                point_1=(peaks[i][ii],peaks[j][ii])
+                point_2=(peaks[i][jj],peaks[j][jj])
+    return point_1,point_2
+
+
+def PlotScat_1 (peaks=[],ii=0,jj=1,Title=' ', Lego=[], show=True, save=False, savePath='/tmp/'):
+    ###Graphical function for plotting scatters from peaks[ii], peaks[jj] with name from Title and peaks data from lego and legend####
+    ################################Modified from PlotScat function for printing lines at the intersection area#######################
+    col=('0.5','r','g','b','c','m', 'k','y', '0.5', 'r','g','b','c','m', 'k','y','r','g','b','c','m', 'k','y','r','g','b','c','m', 'k','y', 'r','g','b','c','m', 'k','y','r','g','b','c','m', 'k','y')
+    col1=('-0.5','-r','-g','-b','-c','-m', 'k','y', 'r','g','b','c','m', 'k','y','r','g','b','c','m', 'k','y','r','g','b','c','m', 'k','y', 'r','g','b','c','m', 'k','y','r','g','b','c','m', 'k','y')
+    plt.ion()
+    fig=plt.figure()
+    ax = fig.add_subplot(111)
+    for i in range (0,len(peaks)):
+        if len(peaks[i])>0:
+            peaks1=np.transpose(peaks[i])
+            if len(Lego)>0:
+                if i==0:
+                    Scat=ax.scatter(peaks1[ii],peaks1[jj], s=5, c=col[i],marker='x', zorder=1, label=Lego[i])
+                else:
+                    Scat=ax.scatter(peaks1[ii],peaks1[jj], s=5, c=col[i],marker='x', zorder=1, label=Lego[i])
+                    point_1,point_2=FindLongest(peaks[i], ii, jj)
+                    ax.plot(point_1,point_2, col[i])
+                    ax.legend()
+            else:
+                if i==0:
+                    Scat=ax.scatter(peaks1[ii],peaks1[jj], s=5, c=col[i],marker='x', zorder=1)
+                else:
+                    Scat=ax.scatter(peaks1[ii],peaks1[jj], s=5, c=col[i],marker='x', zorder=1)
+    if Title!= ' ':
+        plt.title(Title)
+    plt.xlabel('x, pixels')
+    plt.ylabel('y, pixels')
+    axt=plt.gca()
+    axt.set_xlim(ax.get_xlim()[::-1])
+    axt.xaxis.set_ticks_position('bottom')
+    axt.xaxis.set_label_position('bottom')
+    ax.autoscale(False)
+    if show:
+        raw_input('Press any key>')
+    if save:
+        saveName=savePath+Title+'.png'
+        plt.savefig(saveName)
+        if not show:
+            plt.close(fig)
+
+
+def CreateIndexCorr (dHm=-10,dKm=-10, dLm=-10, dH=10,dK=10, dL=10, type=' '):
+    #######fuction to create the hkl indexes for the reference lattice; dH, dK, dL- diapason of indexes variation###########
+    #######type='FCC' allows to remove forbidden reflections for FCC lattice################################################
+    index=[]
+    err=[]
+    for i in range (dHm, dH+1):
+        for j in range (dKm, dK+1):
+            for k in range (dLm, dL+1):
+                if (abs(i)+abs(j)+abs(k))!=0:
+                    if type=='FCC':
+                        if (i%2!=0 and j%2!=0 and k%2!=0) or (i%2==0 and j%2==0 and k%2==0):
+                            index.append((i,j,k))
+                    else:
+                        index.append((i,j,k))
+    index=np.array(index)
+    return index
+
+
+def BuildLatticeCorr(AngDat=[], Vectors=[], ind0=[], Print=True, RotMatr=[],Recip=False):
+    ####################################Final function to generate 3-D pattern from reference lattice#########################
+    #Arguments: AngDat- and Vectors lattice angles and vectors (as 3 elements arrays); ind0- indexes; RotMatr- ratation matrix
+    #Print- display lattice as 3-D plot; Recip- when True lattice parameters are assumed as for reciprocal space
+    if len(AngDat)==3 and len(Vectors)==3:
+        if not Recip:
+            Ral,Rang,VolReal=RecipSpace((AngDat[0],AngDat[1],AngDat[2]),(Vectors[0],Vectors[1],Vectors[2]))
+        else:
+            Rang=AngDat
+            Ral=Vectors
+            print "Reciprocal space:"
+            print "a={0}; b={1}; c={2}".format(Rang[0],Rang[1],Rang[2])
+            print "A={0}; B={1}; C={2}".format(Ral[0],Ral[1],Ral[2])
+        RecMatr=ReciprMatrABC(Rang[0],Rang[1],Rang[2], Ral[0],Ral[1],Ral[2])
+        #print RecMatr
+        peaksSim=np.dot(ind0, RecMatr)
+        if len(RotMatr)!=0:
+            peaksSim=np.dot(peaksSim,RotMatr)
+        if Print:
+            Print3Dlist(peaksSim,0,1,2,False, Orto=False)
+    return peaksSim, ind0
+
+
+def Print3Dlist(BackImg=[],g=1,gg=2,ggg=3, zero=True, Lines=[], step=0.2,Prop=False, Orto=False, show=True, save=False, saveName='/tmp/test.png'):
+    ######Graphical Function to print 3D data from BackImg array, where x,y,z are taken as g,gg,ggg indexes###################
+    if Orto:
+        proj3d.persp_transformation = orthogonal_proj
+    plt.ion()
+    fig=plt.figure()
+    ax=fig.add_subplot(111, projection='3d')
+    col=('b','r','g','c','m','y','k','b','r','g','c','m','y','k', 'b','r','g','c','m','y','k')
+    try:
+        for k in range (0, len(BackImg)):
+            Xp=[]
+            Yp=[]
+            Zp=[]
+            if zero:
+                Xp.append(0)
+                Yp.append(0)
+                Zp.append(0)
+            for i in range (0, len(BackImg[k])):
+                Xp.append(BackImg[k][i][g])
+                Yp.append(BackImg[k][i][gg])
+                Zp.append(BackImg[k][i][ggg])
+            ax.scatter(Xp,Yp,Zp, c=col[k], marker='.')
+            if len(Lines)>0:
+                if len(Lines[k])>1:
+                    for i in range (1, len(Lines[k])):
+                        ax.plot((Lines[k][0][0],Lines[k][i][0]),(Lines[k][0][1],Lines[k][i][1]),(Lines[k][0][2],Lines[k][i][2]),c=col[k])
+    except:
+        Xp=[]
+        Yp=[]
+        Zp=[]
+        if zero:
+            Xp.append(0)
+            Yp.append(0)
+            Zp.append(0)
+        for i in range (0, len(BackImg)):
+            Xp.append(BackImg[i][g])
+            Yp.append(BackImg[i][gg])
+            Zp.append(BackImg[i][ggg])
+        ax.scatter(Xp,Yp,Zp, c='k', marker='.')
+        if len(Lines)>1:
+            for i in range (1, len(Lines)):
+                ax.plot((Lines[0][0],Lines[i][0]),(Lines[0][1],Lines[i][1]),(Lines[0][2],Lines[i][2]),c='r')
+        Xmin=np.min(Xp)
+        Xmax=np.max(Xp)
+        Ymin=np.min(Yp)
+        Ymax=np.max(Yp)
+        Zmin=np.min(Zp)
+        Zmax=np.max(Zp)
+    ax.set_xlabel('X rec., A-1')
+    ax.set_ylabel('Y rec., A-1')
+    ax.set_zlabel('Z rec., A-1')
+    if Prop:
+        lMax=round(np.max(((Xmax-Xmin)/step,(Ymax-Ymin)/step,(Zmax-Zmin)/step)),0)+1
+        Xsc=TicksDef(Xmin-step,Xmax,step,lMax)
+        Ysc=TicksDef(Ymin,Ymax,step,lMax)
+        Zsc=TicksDef(Zmin-step,Zmax,step,lMax)
+        ax.set_xlim(Xsc[0],Xsc[len(Xsc)-1])
+        ax.set_autoscalex_on(False)
+        ax.set_ylim(Ysc[0],Ysc[len(Ysc)-1])
+        ax.set_autoscaley_on(False)
+        ax.set_zlim(Zsc[0],Zsc[len(Zsc)-1])
+        ax.set_xticks(Xsc)
+        ax.set_yticks(Ysc)
+        ax.set_zticks(Zsc)
+        ax.set_autoscalez_on(False)
+        cset = ax.scatter(Xp, Yp, Zsc[0]-step, zdir='z', c='y', marker='.')
+        cset = ax.scatter(Yp, Zp, Xsc[0]-step, zdir='x', c='y',  marker='.')
+        cset = ax.scatter(Xp, Zp, Ysc[len(Ysc)-1]+step, zdir='y', c='y',  marker='.')
+    if show:
+        raw_input('Print any key to continue')
+    if save:
+        plt.savefig(saveName)
+        if not show:
+            plt.close(fig)
+    return ax
+
+
+def RecipSpace ((a,b,c),(A,B,C)):
+    ################Function to recalculate the lattice vectors in reciprocal space###################################
+    c1=math.degrees(math.acos((math.cos(math.radians(a))*math.cos(math.radians(b))-math.cos(math.radians(c)))/(math.sin(math.radians(a))*math.sin(math.radians(b)))))
+    b1=math.degrees(math.acos((math.cos(math.radians(a))*math.cos(math.radians(c))-math.cos(math.radians(b)))/(math.sin(math.radians(c))*math.sin(math.radians(a)))))
+    a1=math.degrees(math.acos((math.cos(math.radians(c))*math.cos(math.radians(b))-math.cos(math.radians(a)))/(math.sin(math.radians(c))*math.sin(math.radians(b)))))
+    V=A*B*C*math.sqrt(1-math.cos(math.radians(a))**2-math.cos(math.radians(b))**2-math.cos(math.radians(c))**2+2*math.cos(math.radians(a))*math.cos(math.radians(b))+2*math.cos(math.radians(b))*math.cos(math.radians(c))+2*math.cos(math.radians(a))*math.cos(math.radians(c)))
+    A1=B*C*math.sin(math.radians(a))/V
+    B1=A*C*math.sin(math.radians(b))/V
+    C1=B*A*math.sin(math.radians(c))/V
+    Vol=1/V
+    return (a1,b1,c1), (A1,B1,C1), Vol
+
+
+def ReciprMatrABC (a,b,c, A, B, C):
+    ##################################Function to build the matrix from the list of lattice parameters###############
+    A=np.radians(A)
+    B=np.radians(B)
+    C=np.radians(C)
+    raw1=(a*np.sin(B), b*(np.cos(C)-np.cos(A)*np.cos(B))/np.sin(B), 0)
+    raw2=(0, b*np.sqrt(np.sin(A)**2-((np.cos(C)-np.cos(A)*np.cos(B))**2)/(np.sin(B)**2)), 0)
+    raw3=(a*np.cos(B), b*np.cos(A), c)
+    return np.array((raw1,raw2,raw3))
+
+'''https://stackoverflow.com/questions/21566379/fitting-a-2d-gaussian-function-using-scipy-optimize-curve-fit-valueerror-and-m
+Block for 2-D Gaussian fitting. Start'''
+def twoD_Gaussian((x, y), amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
+    #define model function and pass independant variables x and y as a list
+    xo = float(xo)
+    yo = float(yo)
+    a = (np.cos(theta)**2)/(2*sigma_x**2) + (np.sin(theta)**2)/(2*sigma_y**2)
+    b = -(np.sin(2*theta))/(4*sigma_x**2) + (np.sin(2*theta))/(4*sigma_y**2)
+    c = (np.sin(theta)**2)/(2*sigma_x**2) + (np.cos(theta)**2)/(2*sigma_y**2)
+    g = offset + amplitude*np.exp( - (a*((x-xo)**2) + 2*b*(x-xo)*(y-yo)+ c*((y-yo)**2)))
+    return g.ravel()
+
+
+def GaussTest (x0, y0, area, imgFile, Plot=False):
+    #Function to perform 2-D gaussian Fitting
+    plt.ion()
+    x = np.linspace(x0-area, x0+area, 2*area+1)
+    y = np.linspace(y0-area, y0+area, 2*area+1)
+    data1=imgFile[x0-area:x0+area+1,y0-area:y0+area+1]
+    data=np.reshape(data1,(2*area+1)*(2*area+1))
+    x,y  = np.meshgrid(x, y)
+    initial_guess=(np.max(data),x0,y0,area/3,area/3,0,np.min(data))
+    dat1=twoD_Gaussian((x, y), np.max(data),x0,y0,area/3,area/3,0,np.min(data))
+    popt, pcov = opt.curve_fit(twoD_Gaussian, (x, y), data, p0=initial_guess)
+    data_fitted = twoD_Gaussian((x, y), *popt)
+    if Plot:
+        fig, ax = plt.subplots(1, 1)
+        ax.hold(True)
+        ax.imshow(data.reshape(2*area+1, 2*area+1), cmap=plt.cm.jet, origin='bottom', extent=(x.min(), x.max(), y.min(), y.max()))
+        ax.contour(x, y, data_fitted.reshape(2*area+1, 2*area+1), 8, colors='w')
+        raw_input('Press any key')
+    R2=SqDif(data_fitted,data)
+    Ang=(popt[5]-6.28*int(popt[5]/6.28))
+    err=(math.sqrt(abs(pcov[0][0])),math.sqrt(abs(pcov[1][1])),math.sqrt(abs(pcov[2][2])),math.sqrt(abs(pcov[3][3])),math.sqrt(abs(pcov[4][4])),math.sqrt(abs(pcov[5][5])),abs(math.sqrt(pcov[6][6])),R2)
+    res=(popt[0], popt[1], popt[2], popt[3], popt[4], Ang, popt[6])
+    return res, err
+'''End'''
+
+
+def SqDif(x=[],y=[]):
+    ###General function to define R-factor for the curves fitting given by arrayws x and y########################
+    try:
+        Sum=0.0001
+        SumNN=0.0001
+        for i in range (0, len(x)):
+            Sum=Sum+abs(x[i]-y[i])
+            SumNN=SumNN+abs(x[i])
+        Var=Sum/SumNN
+    except:
+        Var=1.0
+    return Var
+
+
+def HistFitting (hist, bound=(50,-50), show=True, save=False, savePath='/tmp/'):
+    #############Calculation function for fitting histogram data from hist with 1-D Gaussian function##############
+    ##The number of Gaussians and their limits are selected by variable bond in decreasing order from nax to min###
+    bound=np.array(bound)
+    bound=np.sort(bound)
+    hist1=hist
+    res=[]
+    if show or save:
+        plt.ion()
+        fig=plt.figure()
+        ax = fig.add_subplot(111)
+    for i in range (0, len(bound)):
+        hist0=hist1[hist1<=bound[i]]
+        (mu, sigma) = norm1.fit(hist0)
+        n, bins, patches = plt.hist(hist0, 60, normed=1, facecolor='green', alpha=0.75)
+        y = mlab.normpdf(bins, mu, sigma)
+        l = plt.plot(bins, y, 'r--', linewidth=2)
+        aa1='mu={0:.2f}deg.\n Sig={1:.2f}deg'.format(mu,sigma)
+        plt.text(mu, 0.05, aa1)
+        hist1=hist1[hist1>bound[i]]
+        res.append((mu,sigma))
+    (mu, sigma) = norm1.fit(hist1)
+    n, bins, patches = plt.hist(hist1, 60, normed=1, facecolor='green', alpha=0.75)
+    y = mlab.normpdf( bins, mu, sigma)
+    l = plt.plot(bins, y, 'r--', linewidth=2)
+    aa1='mu={0:.2f}deg.\n Sig={1:.2f}deg'.format(mu,sigma)
+    plt.text(mu, 0.05, aa1)
+    hist1=hist1[hist1>bound[i]]
+    if show or save:
+        plt.ylabel('Distribution density')
+        plt.xlabel('Orientation angle')
+        plt.show()
+        if show:
+            raw_input('Press any key')
+        if save:
+            saveName=savePath+'GaussFit.png'
+            plt.savefig(saveName)
+            if not show:
+                plt.close(fig)
+    res.append((mu,sigma))
+    res=np.array(res)
+    return res
+
+
+def find_nearest_vector(A, target):
+    ##############Service function to find the element of array A and its index nearest to the value given by target#############
+    idx = np.argmin(np.abs(A - target))
+    return A[idx], idx
+
+
+def find_nearest_vector_1(A, target):
+    #Service function to find the element of positive array A and its index nearest to the value given by module of target value#
+    if target>=0:
+        idx = np.argmin(np.abs(A - target))
+        result = A[idx]
+    else:
+        idx = np.argmin(np.abs(A + target))
+        result = -A[idx]
+    return result, idx  
+
+
+"""https://stackoverflow.com/questions/21352129/matplotlib-creating-2d-arrays-from-1d-arrays-is-there-a-nicer-way
+get 2d coordinate grid and Z values in meshgrid format. requires values in
+dataArray to have a rectangular region of x-y space covered uniformly"""
+def getMeshGrid(dataArray, step=18, limit=18, Title=' ', show=True, save=False, savePath='/tmp/'):
+    ###Service function in order to convert the histogram data dataArray into meshgrid format for contourf plot###
+    #Parameters: step- step over x,y gread; limit- limit of intensity value; Title- name of plot; show- show plot#
+    xs = dataArray[:,0]
+    ys = dataArray[:,1]
+    xmin,xmax = xs.min(), xs.max()
+    xstep=step
+    ymin,ymax = ys.min(), ys.max()
+    ystep=step
+    if show or save:
+        plt.ion()
+        fig=plt.figure()
+        ax = fig.add_subplot(111)
+    X = np.arange(int(round(xmin,0)), int(round(xmax,0))+xstep, xstep)
+    Y = np.arange(int(round(ymin,0)), int(round(ymax,0))+ystep, ystep)
+    X,Y = np.meshgrid(X,Y)
+    Z = np.zeros(X.shape)
+    height, width = X.shape
+    for i in range(0, height):
+        for j in range(0,width):
+            halfway = dataArray[abs(dataArray[:,0]-X[i,j])<limit] # finds all with that value of x within limi
+            if len(halfway)>0:
+                idx = np.argmin(np.abs(halfway[:,1] - Y[i,j]))    # finds y value
+                if abs(halfway[idx][1] - Y[i,j])<step:
+                    Z[i,j] = halfway[idx][2]
+    if show or save:
+        cax=ax.contourf(X,Y,Z, cmap=cm.coolwarm)
+        cbar = fig.colorbar(cax)
+        if Title!=' ':
+            plt.title(Title)
+        plt.gca().invert_yaxis()
+        plt.xlabel('x, pixels')
+        plt.ylabel('y, pixels')
+        if show:
+            raw_input('Press any key')
+        if save:
+            saveName=savePath+Title+'.png'
+            plt.savefig(saveName)
+            if not show:
+                plt.close(fig)
+    return X,Y,Z
+
+
+def SortIndexes (ind=[]):
+    #############Service function in order to sort indexes in descending order (for intersection test)###################
+    newInd=[]
+    for i in range (0, len(ind)-1):
+        MinVec=ModVect(ind[i])
+        Ind=i
+        for j in range (i+1, len(ind)-1):
+            if ModVect(ind[j])<MinVec:
+                #print i, Ind, ind[Ind], j, ind[j], MinVec, ModVect(ind[j])
+                Ind=j
+                MinVec=ModVect(ind[j])
+        if Ind!=i:
+            newInd.append((ind[Ind][0],ind[Ind][1],ind[Ind][2]))
+            ind[Ind]=ind[i]
+        else:
+            newInd.append((ind[i][0],ind[i][1],ind[i][2]))
+    return np.array(newInd)
+
+
+def MinimizeInd (ind):
+    ##############Service function in order to elimanate higher order hamonics (for intersection test)###################
+    ind=SortIndexes(ind)
+    ShortInd=[]
+    DoubArray=[]
+    for i in range (0,len(ind)-1):
+        if ModVect(ind[i])!=0:
+            ShortInd.append(ind[i])
+            elDoub=[]
+            elDoub.append(ind[i])
+            for j in range (i+1,len(ind)):
+                if ind[i][0]*ind[i][1]*ind[i][2]!=0:
+                    if 1.0*ind[j][0]/ind[i][0]==1.0*ind[j][1]/ind[i][1] and 1.0*ind[j][2]/ind[i][2]==1.0*ind[j][1]/ind[i][1] and 1.0*ind[j][0]/ind[i][0]==round(1.0*ind[j][0]/ind[i][0],0) and 1.0*ind[j][0]/ind[i][0]>1:
+                        elDoub.append((ind[j][0],ind[j][1],ind[j][2]))
+                        ind[j]=np.array((0.0,0.0,0.0))
+                elif ind[j][0]==0 and ind[i][0]==0:
+                    if ind[j][1]==0 and ind[i][1]==0:
+                        if 1.0*ind[j][2]/ind[i][2]==round(1.0*ind[j][2]/ind[i][2],0) and 1.0*ind[j][2]/ind[i][2]>1:
+                          elDoub.append((ind[j][0],ind[j][1],ind[j][2]))
+                          ind[j]=np.array((0.0,0.0,0.0))
+                    elif ind[j][2]==0 and ind[i][2]==0:
+                        if 1.0*ind[j][1]/ind[i][1]==round(1.0*ind[j][1]/ind[i][1],0) and 1.0*ind[j][1]/ind[i][1]>1:
+                          elDoub.append((ind[j][0],ind[j][1],ind[j][2]))
+                          ind[j]=np.array((0.0,0.0,0.0))
+                    elif 1.0*ind[j][2]/ind[i][2]==1.0*ind[j][1]/ind[i][1] and 1.0*ind[j][1]/ind[i][1]==round(1.0*ind[j][1]/ind[i][1],0) and 1.0*ind[j][2]/ind[i][2]>1:
+                        elDoub.append((ind[j][0],ind[j][1],ind[j][2]))
+                        ind[j]=np.array((0.0,0.0,0.0))
+                elif ind[j][1]==0 and ind[i][1]==0:
+                    if ind[j][2]==0 and ind[i][2]==0 and 1.0*ind[j][0]/ind[i][0]==round(1.0*ind[j][0]/ind[i][0],0) and 1.0*ind[j][0]/ind[i][0]>1:
+                        elDoub.append((ind[j][0],ind[j][1],ind[j][2]))
+                        ind[j]=np.array((0.0,0.0,0.0))
+                    elif 1.0*ind[j][0]/ind[i][0]==1.0*ind[j][2]/ind[i][2] and 1.0*ind[j][2]/ind[i][2]==round(1.0*ind[j][2]/ind[i][2],0) and 1.0*ind[j][2]/ind[i][2]>1:
+                        elDoub.append((ind[j][0],ind[j][1],ind[j][2]))
+                        ind[j]=np.array((0.0,0.0,0.0))
+                elif ind[j][2]==0 and ind[i][2]==0:
+                    if 1.0*ind[j][0]/ind[i][0]==1.0*ind[j][1]/ind[i][1] and 1.0*ind[j][0]/ind[i][0]==round(1.0*ind[j][0]/ind[i][0],0) and 1.0*ind[j][0]/ind[i][0]>1:
+                        elDoub.append((ind[j][0],ind[j][1],ind[j][2]))
+                        ind[j]=np.array((0.0,0.0,0.0))
+            DoubArray.append(elDoub)
+    return np.array(ShortInd), DoubArray
+
+
+def FindCommonPlanes_1 (RotM=[], RotM1=[], AngDat=(90,90,90),Vectors=(5.431,5.431,5.431),MaxInd=5, AcsLim=0.001, viewAx=(1,1,0), dist=20, LatticeType=' ',RefAxis=(0,0,1),show_3D=True, save_3D=False, NameSave='/tmp/test.png'):
+    ####Principal function finding intersection (common planes) between two sets of diffraction data of crystal twins####
+    #Parameters: AngDat and Vectors- lattice angles and vectors of twinned crystal; MaxInd- hkl indexes limits;
+    #RotM, RotM1- rotation matrices for 1-st and 2-nd twins, AcsLim- intersection limit; viewAx- viewing axis;
+    #LatticeType- when FCC removes the forbidden reflexions; RefAxis- reference axis for counting tilt angles;
+    #show- when True plots the diffraction patterns in 001 and 110 direction for view by detector at distance dist;
+    #show_3D- when True plots the intersection of reciprocal diffraction pattern in 3D view.
+    ind=CreateIndexCorr (dHm=-MaxInd,dKm=-MaxInd,dLm=-MaxInd,dH=MaxInd,dK=MaxInd,dL=MaxInd, type=LatticeType)
+    peaks0, ind0=BuildLatticeCorr(AngDat, Vectors, ind, Print=False, RotMatr=RotM, Recip=False)
+    peaks1, ind1=BuildLatticeCorr(AngDat, Vectors, ind, Print=False, RotMatr=RotM1,Recip=False)
+    sol1=[]
+    sol2=[]
+    commonPeak=[]
+    commonInd=[]
+    planeAng=[]
+    for i in range(0, len(peaks0)):
+        for j in range(0, len(peaks1)):
+            if abs(peaks0[i][0]-peaks1[j][0])<AcsLim and abs(peaks0[i][1]-peaks1[j][1])<AcsLim and abs(peaks0[i][2]-peaks1[j][2])<AcsLim and abs(Angle(peaks0[i],viewAx)-90)<1 and abs(Angle(peaks1[j],viewAx)-90)<1:
+                sol1.append(ind0[i])
+                sol2.append(ind1[j])
+                planeAng.append((Angle(peaks1[j],RefAxis), 1.0))
+    angDat1,indDat_1,listInd_1=SelectTriplets_1 (np.array(planeAng), np.array(sol1), ii=0, jj=1)
+    angDat2,indDat_2,listInd_2=SelectTriplets_1 (np.array(planeAng), np.array(sol2), ii=0, jj=1)
+    if show_3D or save_3D:
+        imgAr=[]
+        imgAr.append(peaks0)
+        imgAr.append(peaks1)
+        Print3Dlist(imgAr,0,1,2, Orto=True, show=show_3D, save=save_3D, saveName=NameSave)
+    return angDat1,indDat_1,indDat_2
+
+
+def ModVect((x,y,z)):
+    ###############################Service function to recalculate the module of vector###################################
+    return np.sqrt(x*x+y*y+z*z)
+
+
+def NeiborsSpec_1 ((x1,y1,z1),(x2,y2,z2),e1=[]):
+    ###Service function to find the distance between two vectors given by coordinates and its orientation along axis e1###
+    xx=x1-x2
+    yy=y1-y2
+    zz=z1-z2
+    if xx==0 and yy==0 and zz==0:
+        dist=0.
+        cos=0.
+        sin=0.
+    else:
+        dist=math.sqrt(xx*xx+yy*yy+zz*zz)
+        if len(e1)==0:
+            cos=180*math.acos(yy/dist)/math.pi
+        else:
+            cos=Angle ((xx,yy,zz),e1, DEG=True,COS=False)
+        if xx==0:
+            sin=1
+        else:
+            sin=xx/abs(xx)
+    return dist, cos, sin
+
+
+def GBdata (type='GaAs'):
+    ##################Service function in order assign the orientation angles with predifined for diamond structures####################
+    return np.array(((0.0, 1),(16.10, 51),(26.53, 19),(31.50, 27),(38.94, 9),(45.98, 59),(50.48, 11),(53.59, 123),(55.88, 41),(70.53, 3),(109.47, -3),(129.52, -11)))
+
+
+def SelectTriplets_1 (dat=[], ind=[], ii=0, jj=1):
+    #################Service function to find the equal or 180 different elements of array dat over indexex ii and jj###################
+    result=[]
+    index=[]
+    doubleInd=[]
+    for i in range (0, len(dat)-1):
+        if dat[i][jj]>0:
+            MinInd=ind[i]
+            vect=dat[i]
+            AddInd=[]
+            AddInd.append(ind[i])
+            for j in range (i+1, len(dat)):
+                if abs(dat[i][ii]-dat[j][ii])==0 or abs(dat[i][ii]+dat[j][ii])==180:
+                    if ModVect(ind[j])<ModVect(MinInd):
+                        vect=dat[j]
+                        MinInd=ind[j]
+                        AddInd.append(ind[j])
+                        dat[j][jj]=-1
+                    else:
+                        AddInd.append(ind[j])
+                        dat[j][jj]=-1
+            doubleInd.append(AddInd)
+            result.append(vect)
+            index.append(MinInd)
+    return np.array(result), np.array(index), doubleInd
+
+
+def ConstructCommonPlanes(OrientAng1=70.59, OrientAng2=-70.59, selAngle=[], RefVect=np.array((-1,1,-1)), CorrCoef=0.25, a=1.0, Norm=np.array((1,1,0)), AngDat=(90,90,90), Vectors=(5.6535,5.6535,5.6535), MaxInd=7, sh_Rec=True, sv_Rec=False, Show=False, Save=False, sh_Twins=True, sv_Twins=False, savePath='/tmp/'):
+    #Test function for studying two twins with lattice parameters AngDat and Vector rotate on OrientAng1 and OrientAn2 angles along Norm axis respectively#
+    #The selAngle is a list of angles created by possible boundaries (to be defing from TEM image), a is a littice constant for simulated 3D pattern
+    #RefVect is a vector along which one can move the twin with displacement a*CorrCoef
+    CorrVect=RefVect*a*CorrCoef
+    planeXY=Space_3D(a,Dia=True,NX=10,NY=10,NZ=10)
+    index=int(round(len(planeXY)/2,0))
+    RotMatr1=rotation_matrix_1 (Norm,OrientAng1,Deg=True)
+    RotMatr2=rotation_matrix_1 (Norm,OrientAng2,Deg=True)
+    Ang_Z,ComInd1,ComInd2=FindCommonPlanes_1 (RotMatr1,RotMatr2, AngDat,Vectors,MaxInd, AcsLim=0.01, viewAx=(1,1,0),LatticeType='FCC',show_3D=sh_Rec, save_3D=sv_Rec, NameSave=savePath+'Twins_{0}x{1}degree'.format(int(round(OrientAng1)),int(round(OrientAng2))))
+    if len(selAngle)==0:
+        refPat1=[]
+        refPat1.append(MakeProjection (np.dot(planeXY,RotMatr1),Norm))
+        legend1=[]
+        legend1.append('Atoms')
+        refPat2=[]
+        refPat2.append(MakeProjection (np.dot(planeXY,RotMatr2),Norm))
+        legend2=[]
+        legend2.append('Atoms')
+        for i in range (0, len(ComInd1)):
+            commonIntersection=[]
+            plPr1=Plane_byNormal(np.array(planeXY[index]), ComInd1[i])
+            prPr1=SortPoints(planeXY,plPr1)
+            RotPlane1=np.dot(planeXY[index],RotMatr1)
+            if OrientAng1>=0:
+                RefGrain=np.dot(prPr1[2],RotMatr1)
+            else:
+                RefGrain=np.dot(prPr1[1],RotMatr1)
+            refPlot1=MakeProjection(np.dot(prPr1[0],RotMatr1), Norm)
+            legend1.append(ComInd1[i])
+            refPat1.append(refPlot1)
+            plPr2=Plane_byNormal(np.array(planeXY[index]), ComInd2[i])
+            prPr2=SortPoints(planeXY,plPr2)
+            RotPlane2=np.dot(planeXY[index],RotMatr2)
+            MoveVect=RotPlane1-RotPlane2
+            if OrientAng2>=0:
+                if OrientAng1>=0:
+                   RotGrain=np.dot(prPr2[1],RotMatr2)
+                else: 
+                   RotGrain=np.dot(prPr2[2],RotMatr2)
+            else:
+                RotGrain=np.dot(prPr2[1],RotMatr2)
+            if len(CorrVect)==0:
+                RotGrain=RotGrain+MoveVect
+            else:
+                RotGrain=RotGrain+MoveVect+CorrVect
+            commonIntersection.append(MakeProjection(RefGrain,Norm))
+            commonIntersection.append(MakeProjection(RotGrain,Norm))
+            if Show or Save:
+              textLeg=[]
+              textLeg.append(ComInd1[i])
+              textLeg.append(ComInd2[i])
+              PlotScat(commonIntersection,ii=0,jj=2,Title='Twins_{0}x{1}deg_GB_{2}'.format(int(round(OrientAng1)),int(round(OrientAng2)),i),Lego=textLeg, show=Show, save=Save, savePath=savePath)
+            refPlot2=MakeProjection(np.dot(prPr2[0],RotMatr2),Norm)
+            legend2.append(ComInd2[i])
+            refPat2.append(refPlot2)
+        if sh_Twins or sv_Twins:
+            PlotScat_1(refPat1,ii=0,jj=2,Title='Twin_{0}degVsTwin{1}deg'.format(int(round(OrientAng1)),int(round(OrientAng2))), Lego=legend1, show=sh_Twins, save=sv_Twins, savePath=savePath)
+            PlotScat_1(refPat2,ii=0,jj=2,Title='Twin_{0}degVsTwin{1}deg'.format(int(round(OrientAng2)),int(round(OrientAng1))), Lego=legend2, show=sh_Twins, save=sv_Twins, savePath=savePath)
+    else:
+        for i in range (0, len(selAngle)):
+            NearAng,NearInd=find_nearest_vector(Ang_Z, selAngle[i])
+            commonIntersection=[]
+            plPr1=Plane_byNormal(np.array(planeXY[index]), ComInd1[int(NearInd)])
+            prPr1=SortPoints(planeXY,plPr1)
+            RotPlane1=np.dot(planeXY[index],RotMatr1)
+            if OrientAng1>=0:
+                RefGrain=np.dot(prPr1[2],RotMatr1)
+            else:
+                RefGrain=np.dot(prPr1[1],RotMatr1)
+            refPlot1=MakeProjection(np.dot(prPr1[0],RotMatr1), Norm)
+            plPr2=Plane_byNormal(np.array(planeXY[index]), ComInd2[int(NearInd)])
+            prPr2=SortPoints(planeXY,plPr2)
+            RotPlane2=np.dot(planeXY[index],RotMatr2)
+            MoveVect=RotPlane1-RotPlane2
+            if OrientAng2>0:
+                RotGrain=np.dot(prPr2[2],RotMatr2)
+            else:
+                RotGrain=np.dot(prPr2[1],RotMatr2)
+            RotGrain=RotGrain+MoveVect+ComInd1[i]/4.0
+            commonIntersection.append(MakeProjection(RefGrain,Norm))
+            commonIntersection.append(MakeProjection(RotGrain,Norm))
+            textLeg=[]
+            textLeg.append(ComInd1[int(NearInd)])
+            textLeg.append(ComInd2[int(NearInd)])
+            PlotScat(commonIntersection,ii=0,jj=2,Title='Boundary',Lego=textLeg)
+            refPlot2=MakeProjection(np.dot(prPr2[0],RotMatr2),Norm)
+    return Ang_Z,ComInd1,ComInd2
+
+
+def FindSelectIndexCorr1 (ind=[], SelectIndex=(2,0,2)):
+    ########################fuction to find the desired hkl index given by SelectIndex in ind array###########################
+    indFound=-1
+    for i in range (0, len(ind)):
+        if ind[i][0]==SelectIndex[0] and ind[i][1]==SelectIndex[1] and ind[i][2]==SelectIndex[2]:
+            indFound=i
+            break
+    return indFound
+
+
+def PathWay(name, warn=False):
+    ##########Service function to test if folder exists, if there is no folder with this name it will be created##############
+    if os.path.exists(name):
+        if warn:
+            try:
+                aa=int(raw_input('Path {0} exists, files will be replaced there. Press any case to continue or 0 -to exit>>>'.format(name)))
+            except:
+                aa=1
+            if aa==0:
+                exit()
+    else:
+        try:
+            #print name
+            os.mkdir(name)
+        except:
+            print 'Warning: mistake in creating directory'
+###############################################################################################################################
+
+
+asd=ReadUniversalText(sys.argv[1], 2)       #Reading input file
+###Initializing path, file names and fitting parameters
+try:
+    nameFile=sys.argv[2]
+    im=Image.open(nameFile)
+except:
+    try:                                    #Set TEM image path (the image taken for analysis has to be in .tif format and placed in the same folder as script/control files)
+        nameFile=asd[0][3]
+        im=Image.open(nameFile)
+    except:
+         print 'Image cannot be opened. Please, check if it has .tif format and reasanable content'
+         quit()
+PathWay(nameFile[:-4]+'/', warn=False)      #Set path for data saving
+pathData=nameFile[:-4]+'/'
+print '\n###Data of image {0} will be saved in subfolder {1}###\n'.format(nameFile, os.getcwd()+'/'+pathData)
+FileName=pathData+asd[0][3]                 #Path and file name for saving peaks data
+ImageFolder=pathData+asd[1][2]+'/'          #Path for saving image data
+PathWay(ImageFolder, warn=False)
+resultName=pathData+asd[2][2]               #Path for saving the resulting data (twins marked with orientation angles and possible ontersections planes)
+area=int(asd[4][2])                         #Fitting area for peak analysis
+limit=int(asd[5][2])                        #Intensity threshold for peak analysis
+
+###Initializing showing and saving graphical data
+sh_TEMpeaks=False                           #show TEM image with peaks
+sv_TEMpeaks=False                           #save TEM image with peaks
+if asd[8][3]=='Y':
+    sh_TEMpeaks=True
+if asd[8][4]=='Y':
+    sv_TEMpeaks=True
+sh_IntMap=False                             #show Intensity map image
+sv_IntMap=False                             #save Intensity map image
+if asd[9][2]=='Y':
+    sh_IntMap=True
+if asd[9][3]=='Y':
+    sv_IntMap=True
+sh_IntHisto=False                           #show Intensity histogram image
+sv_IntHisto=False                           #save Intensity histogram image
+if asd[10][2]=='Y':
+    sh_IntHisto=True
+if asd[10][3]=='Y':
+    sv_IntHisto=True
+sh_SigXHisto=False                          #show Sigma X histogram image
+sv_SigXHisto=False                          #save Sigma X histogram image
+if asd[11][2]=='Y':
+    sh_SigXHisto=True
+if asd[11][3]=='Y':
+    sv_SigXHisto=True
+sh_SigYHisto=False                          #show Sigma Y histogram image
+sv_SigYHisto=False                          #save Sigma Y histogram image
+if asd[12][2]=='Y':
+    sh_SigYHisto=True
+if asd[12][3]=='Y':
+    sv_SigYHisto=True
+sh_DistHisto=False                          #show Distance histogram image
+sv_DistHisto=False                          #save Distance histogram image
+if asd[13][2]=='Y':
+    sh_DistHisto=True
+if asd[13][3]=='Y':
+    sv_DistHisto=True
+sh_AngleHisto=False                         #show Angle histogram image
+sv_AngleHisto=False                         #save Angle histogram image
+if asd[14][2]=='Y':
+    sh_AngleHisto=True
+if asd[14][3]=='Y':
+    sv_AngleHisto=True
+sh_AngleFit=False                           #show Angle fitting image
+sv_AngleFit=False                           #save Angle fitting image
+if asd[15][2]=='Y':
+    sh_AngleFit=True
+if asd[15][3]=='Y':
+    sv_AngleFit=True
+sh_AngleMap=False                           #show Twin orientation Angle distribution map
+sv_AngleMap=False                           #save Twin orientation Angle distribution map
+if asd[16][3]=='Y':
+    sh_AngleMap=True
+if asd[16][4]=='Y':
+    sv_AngleMap=True
+sh_3DMap=False                              #show 3D reciprocal plane intesection map
+sv_3DMap=False                              #save 3D reciprocal plane intesection map
+if asd[17][2]=='Y':
+    sh_3DMap=True
+if asd[17][3]=='Y':
+    sv_3DMap=True
+sh_twinMap=False                            #show Twin with possible intesection plane
+sv_twinMap=False                            #save Twin with possible intesection plane
+if asd[18][3]=='Y':
+    sh_twinMap=True
+if asd[18][4]=='Y':
+    sv_twinMap=True
+sh_twinBound=False                          #show interconnection of twins
+sv_twinBound=False                          #save interconnection of twins
+if asd[19][2]=='Y':
+    sh_twinBound=True
+if asd[19][3]=='Y':
+    sv_twinBound=True
+
+###Data loading from .tif image. Creation .dat file for peaks (if it does not exist)
+statinfo = os.stat(nameFile)
+dfr0=np.array(im)
+if statinfo.st_size>1.024e6:
+    dfr=np.transpose(dfr0)[0]
+else:
+    dfr=np.transpose(dfr0)
+if not os.path.isfile(FileName):
+    peaks=PeakFinderNP(dfr, area, limit)
+    pk=[]
+    with open(FileName,"w") as f0:
+        f0.write("{0:>5} {1:>4} {2:>4} {3:>6} {4:>6} {5:>7} {6:>6} {7:>7} {8:>6} {9:>6} {10:>6} {11:>6} {12:>6} {13:>6} {14:>6} {15:>6} {16:>6} {17:>6}\n".format("nn","X","Y","Int","ErI","Xg","ErX","Yg","ErY","Sx","ErSx","Sy","ErSy","Th","ErTh","Bg","ErBg","er_R"))
+        for i in range (0, len(peaks)):
+            try:
+                res, err=GaussTest (int(peaks[i][0]), int(peaks[i][1]), area, dfr, Plot=False)
+                f0.write("{0:>5} {1:>4.0f} {2:>4.0f} {3:>6.2f} {4:>6.2f} {5:>7.2f} {6:>6.2f} {7:>7.2f} {8:>6.2f} {9:>6.2f} {10:>6.2f} {11:>6.2f} {12:>6.2f} {13:>6.2f} {14:>6.2f} {15:>6.2f} {16:>6.2f} {17:>6.2f}\n".format(i,peaks[i][0],peaks[i][1],res[0],err[0],res[1],err[1],res[2],err[2],res[3],err[3],res[4],err[4],res[5],err[5],res[6],err[6],err[7]))
+                pk.append((i,peaks[i][0],peaks[i][1],res[0],err[0],res[1],err[1],res[2],err[2],res[3],err[3],res[4],err[4],res[5],err[5],res[6],err[6],err[7]))
+            except:
+                print i,"-th peak cannot be fitted"
+    f0.close()
+
+###Loading peaks data from.dat file.
+dat=np.array(ReadUniversalText(FileName, 1))
+pk=dat.astype(float)
+pk1=np.transpose(pk)
+pk1=pk1.astype(float)
+PlotFig(nameFile, pk, ii=5,jj=7, show=sh_TEMpeaks, save=sv_TEMpeaks, savePath=ImageFolder)
+dataArray=np.array((pk1[5],pk1[7],pk1[3]))
+X,Y,Z=getMeshGrid(np.transpose(dataArray), 3.5*area, 3.5*area, 'Intensity map', show=sh_IntMap, save=sv_IntMap, savePath=ImageFolder)
+HistVisual(pk1[3], bins=100, AxName=("Intensity, cc","Quantity, st."), show=sh_IntHisto, save=sv_IntHisto, savePath=ImageFolder)
+HistVisual(pk1[9], bins=100, AxName=("Sigma X, pix","Quantity, st."), show=sh_SigXHisto, save=sv_SigXHisto, savePath=ImageFolder)
+HistVisual(pk1[11], bins=100, AxName=("SigmaY, pix", "Quantity, st."), show=sh_SigYHisto, save=sv_SigYHisto, savePath=ImageFolder)
+
+###Building dumbellbells' pairs
+shortAr=[]
+for i in range (0, len(pk)-1):
+    if pk[i][1]>0:
+        lenAr=np.sqrt((pk1[5]-pk[i][5])**2+(pk1[7]-pk[i][7])**2)
+        minval = np.argmin(lenAr[np.nonzero(lenAr)])
+        if (pk[i][9]+pk[i][11])>(pk1[9][minval+1]+pk1[5][minval+1]) and pk[i][7]!=pk1[7][minval+1]:                        #Test for the dumbell's polarity by comparing the atom size
+            angle=math.atan((pk[i][5]-pk1[5][minval+1])/(pk[i][7]-pk1[7][minval+1]))*180/math.pi
+        elif pk[i][7]!=pk1[7][minval+1]:
+            angle=math.atan((-pk[i][5]+pk1[5][minval+1])/(-pk[i][7]+pk1[7][minval+1]))*180/math.pi
+        if lenAr[minval+1]<area*5 and lenAr[minval+1]>area/2:
+            shortAr.append((pk[i][5],pk[i][7],lenAr[minval+1],angle))
+            pk[minval+1][1]=0
+
+###Finding twins and their orientation angles
+pk=np.array(shortAr)
+pk1=np.transpose(pk)
+HistVisual(pk1[2], bins=100, AxName=("Distance, pix", "Quantity, st."), show=sh_DistHisto, save=sv_DistHisto, savePath=ImageFolder)
+fig=HistVisual(pk1[3], bins=100, AxName=("Angle, deg", "Quantity, st."), show=sh_AngleHisto, save=sv_AngleHisto, savePath=ImageFolder, indicator=True)
+BreakDat=np.array(raw_input('Write breaking point position starting from biggest and separated by space <<< ').split(' '))
+bound=BreakDat.astype(float)
+plt.close(fig)
+resPr=HistFitting (pk1[3], bound, show=sh_AngleFit, save=sv_AngleFit, savePath=ImageFolder)
+dataArray=np.array((pk1[0],pk1[1],pk1[3]))
+X,Y,Z=getMeshGrid(np.transpose(dataArray), 3.5*area, 3.5*area, 'Rotation angle', show=sh_AngleMap, save=sv_AngleMap, savePath=ImageFolder)
+
+###Tests in direct/reciprocal space. Data reporting.
+result=np.transpose(resPr)[0]
+Ang0, pos0=find_nearest_vector(result, 0)
+tmp=result-Ang0
+axis=np.array((1,1,0))
+planes=[]
+GB=GBdata(type='GaAs')
+GBtransp=np.transpose(GB)
+planeXY=Space_3D(a=1.0,Dia=True,NX=10,NY=10,NZ=10)
+Norm=np.array((1,1,0))
+index=int(round(len(planeXY)/2,0))
+with open(resultName,"w") as f1:
+    f1.write("Sample {0}\nPossible twins and their grain boundaries at {1:>4.2f} degree vertical mismatch:\n".format(nameFile, Ang0))
+    for i in range (0, len(tmp)-1):
+        Ang1, pos1=find_nearest_vector_1(GBtransp[0], tmp[i])
+        for j in range (i+1, len(tmp)):
+            Ang2, pos2=find_nearest_vector_1(GBtransp[0], tmp[j])
+            print Ang1, Ang2
+            aa1,aa2,aa3=ConstructCommonPlanes(Ang1, Ang2, [], np.array((0.0,0.0,0.0)), 0.25, a=1.0, Norm=np.array((1,1,0)), AngDat=(90,90,90), Vectors=(5.6535,5.6535,5.6535), MaxInd=7, sh_Rec=sh_3DMap, sv_Rec=sv_3DMap, Show=sh_twinBound, Save=sv_twinBound, sh_Twins=sh_twinMap, sv_Twins=sv_twinMap, savePath=ImageFolder)
+            print "Possible solutions"
+            f1.write("\nCorrected Intersections of twins rotated around {0:>6.2f} and {1:>6.2f} degrees:\n".format(Ang1, Ang2))
+            for k in range (0, len(aa1)):
+                print aa2[k],aa3[k], "at angle",aa1[k][0], "degree"
+                f1.write("Twin1 {0} with Twin2 {1} at {2:>6.2f} degree\n".format(aa2[k], aa3[k], aa1[k][0]))
+f1.close()
